@@ -1,0 +1,41 @@
+{
+  "name": "canvas-drawing",
+  "version": "1.0.0",
+  "description": "Example of simple drawing tool with javascript and canvas",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "start:open": "node index.js --open",
+    "dev": "node index.js --dev",
+    "dev:open": "node index.js --dev --open",
+    "build": "node index.js --build",
+    "build:open": "node index.js --build --open"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thenoiro/canvas-drawing.git"
+  },
+  "author": "Bohdan Chernovol",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/thenoiro/canvas-drawing/issues"
+  },
+  "homepage": "https://github.com/thenoiro/canvas-drawing#readme",
+  "devDependencies": {
+    "clean-webpack-plugin": "^3.0.0",
+    "copy-webpack-plugin": "^6.0.3",
+    "css-loader": "^3.6.0",
+    "eslint": "^7.4.0",
+    "eslint-config-airbnb-base": "^14.2.0",
+    "eslint-plugin-import": "^2.22.0",
+    "html-webpack-plugin": "^4.3.0",
+    "style-loader": "^1.2.1"
+  },
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "open": "^7.0.4",
+    "serve-handler": "^6.1.3",
+    "webpack": "^4.43.0",
+    "webpack-dev-server": "^3.11.0"
+  }
+}

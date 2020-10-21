@@ -1,0 +1,87 @@
+body, html {
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#drawer-area {
+  border: 1px solid black;
+  width: 100%;
+  height: 100%;
+  max-width: 800px;
+  max-height: 600px;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+}
+#drawer-area, #drawer-area * {
+  box-sizing: border-box;
+}
+#drawer-area .tool {
+  background-color: silver;
+  width: 40px;
+  border-right: 1px solid #aaa;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+#drawer-area .tool .tools {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  padding: 10px 0;
+}
+#drawer-area .tool .tools.tools-drawing {
+  flex-grow: 1;
+}
+#drawer-area .icon-button {
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #ddd;
+  border: 1px solid gray;
+  border-radius: 3px;
+  width: 28px;
+  height: 28px;
+  margin: 5px;
+  cursor: pointer;
+  box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.25);
+  transition-duration: 300ms;
+  font-size: 18px;
+}
+#drawer-area .icon-button:hover {
+  border-color: black;
+  background-color: white;
+  transform: scale(1.1);
+  transition-duration: 200ms;
+}
+#drawer-area .icon-button:focus {
+  outline: none;
+}
+#drawer-area .icon-button.active {
+  background-color: yellow;
+}
+#drawer-area .icon-button.clear {
+  align-self: flex-start;
+}
+#drawer-area .icon-button .line-icon {
+  width: 20px;
+  height: 0px;
+  border: 1px solid black;
+  transform: rotate(40deg);
+  border-radius: 3px;
+}
+#drawer-area .paper {
+  background-color: #eee;
+  flex-grow: 1;
+  cursor: crosshair;
+}
