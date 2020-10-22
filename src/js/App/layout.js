@@ -11,9 +11,21 @@ class Layout {
   }
 
   /**
-   * Returns coords assuming that x1 and y1 are coords of the top left cornor.
+   * Returns original coords
    */
   getCoords() {
+    return {
+      x1: this.x1,
+      x2: this.x2,
+      y1: this.y1,
+      y2: this.y2,
+    };
+  }
+
+  /**
+   * Returns coords assuming that x1 and y1 are coords of the top left cornor.
+   */
+  getConsistentCoords() {
     return {
       x1: Math.min.apply(null, [this.x1, this.x2]),
       x2: Math.max.apply(null, [this.x1, this.x2]),

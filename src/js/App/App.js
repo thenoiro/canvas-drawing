@@ -1,5 +1,4 @@
 import Layout from './layout';
-import Loop from './loop';
 import Drawer from './drawer';
 
 // TODO: Listen for window size changing
@@ -45,10 +44,6 @@ class DrawerApp {
     const { offsetWidth, offsetHeight } = this.paper;
     this.canvas.setAttribute('width', offsetWidth);
     this.canvas.setAttribute('height', offsetHeight);
-
-    // Create new Loop instance, pass callback as an option.
-    // This callback will fire [this.next] method on each animation frame call.
-    this.loop = new Loop(() => this.next());
 
     // Create Drawer instance.
     this.drawer = new Drawer({ canvas: this.canvas });
@@ -101,7 +96,7 @@ class DrawerApp {
           // Clear all the data and redraw the canvas
           this.layouts = [];
           this.layout = null;
-          this.next();
+          this.render();
         }
       });
     });
@@ -118,8 +113,6 @@ class DrawerApp {
         x1: c.x,
         y1: c.y,
       });
-      // Start listening for animation frames to draw actual layouts
-      this.loop.start();
     });
 
     // Canvas mousemove event
@@ -150,6 +143,7 @@ class DrawerApp {
             y1: c.y,
           });
         }
+        this.render();
       }
     });
 
@@ -163,13 +157,11 @@ class DrawerApp {
         this.layouts.push(this.layout);
       }
       this.layout = null;
-
-      // Stop listening for animation frames
-      this.loop.stop();
+      this.render();
     });
 
     // Listen for document mousemove event to catch the moment when the cursor has left the canvas.
-    // If it happend, stop listening for animation frames and clear not finished shape's layout.
+    // If it happened, clear not finished shape's layout.
     document.addEventListener('mousemove', (e) => {
       const exceptions = [
         e.clientX < canvasCoords.x1,
@@ -180,7 +172,7 @@ class DrawerApp {
       if (exceptions.some((ex) => ex)) {
         this.clicked = false;
         this.layout = null;
-        this.loop.stop();
+        this.render();
       }
     });
   }
@@ -202,7 +194,7 @@ class DrawerApp {
   /**
    * Readraw canvas in case of some changes.
    */
-  next() {
+  render() {
     // Copy finished layouts
     const newLayouts = [...this.layouts];
 
@@ -231,8 +223,8 @@ class DrawerApp {
     // Maybe [this.layout] (not finished shape) has changed? Lets check and compare it with the
     // last layout from [drawer] instance.
     const lastPreviousLayout = previousLayouts[previousLayouts.length - 1];
-    const lastCoords = Object.values(lastPreviousLayout.getCoords());
-    const thisCoords = Object.values(this.layout.getCoords());
+    const lastCoords = Object.values(lastPreviousLayout.getConsistentCoords());
+    const thisCoords = Object.values(this.layout.getConsistentCoords());
     const changes = lastCoords.some((v, i) => v !== thisCoords[i]);
 
     // We have the same amount of layouts, but different coords for last ones. Redraw.

@@ -25,21 +25,17 @@ class Drawer {
   }
 
   renderLayout(layout) {
-    const { ctx } = this;
-
-    // These coords assumes x1 and y1 are left top cornor coords (x2, y2 - bottom right).
-    const coords = layout.getCoords();
-    const { x1, x2 } = coords;
-    const { y1, y2 } = coords;
-
     // Lines width
     const weight = 4;
-
-    // If the shape is biggest then two lines width sum, we possibly need to fill it inside
-    // with white color
-    const bigEnough = (x2 - x1) > (weight * 2) && (y2 - y1) > (weight * 2);
+    const { ctx } = this;
 
     const renderRect = () => {
+      const coords = layout.getConsistentCoords();
+      const { x1, x2 } = coords;
+      const { y1, y2 } = coords;
+
+      // If the shape is biggest then two lines width sum, fill it inside with white color
+      const bigEnough = (x2 - x1) > (weight * 2) && (y2 - y1) > (weight * 2);
       ctx.fillStyle = 'black';
       ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
 
@@ -55,9 +51,17 @@ class Drawer {
       }
     };
     const renderCircle = () => {
+      const coords = layout.getCoords();
+      const { x1, x2 } = coords;
+      const { y1, y2 } = coords;
+
       const a = x2 - x1;
       const b = y2 - y1;
       const radius = Math.sqrt((a * a) + (b * b));
+
+      // If the shape is biggest then two lines width sum, fill it inside with white color
+      const bigEnough = radius > weight * 2;
+
       ctx.fillStyle = 'black';
       ctx.beginPath();
       ctx.arc(x1, y1, radius, 0, Math.PI * 2);
@@ -72,13 +76,14 @@ class Drawer {
       }
     };
     const renderLine = () => {
+      const coords = layout.getCoords();
+      const { x1, x2 } = coords;
+      const { y1, y2 } = coords;
+
       ctx.lineWidth = weight;
       ctx.beginPath();
-      // We use layout.[x1, y1, x2, y2] because it is important for line where the user started
-      // it. layout.getCoords() returns them assuming x1 and y1 are coords for top left cornor
-      // (no matter did the shape originally start drawing by these coords or not).
-      ctx.moveTo(layout.x1, layout.y1);
-      ctx.lineTo(layout.x2, layout.y2);
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
       ctx.stroke();
     };
 
