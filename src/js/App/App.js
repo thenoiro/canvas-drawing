@@ -113,6 +113,7 @@ class DrawerApp {
         x1: c.x,
         y1: c.y,
       });
+      this.render();
     });
 
     // Canvas mousemove event

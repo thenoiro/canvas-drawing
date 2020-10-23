@@ -29,11 +29,13 @@ class Drawer {
     const weight = 4;
     const { ctx } = this;
 
-    const renderRect = () => {
-      const coords = layout.getConsistentCoords();
-      const { x1, x2 } = coords;
-      const { y1, y2 } = coords;
+    const renderRect = (coords) => {
+      const { x1, y1 } = coords;
+      const { x2, y2 } = coords;
 
+      if ([x1, x2, y1, y2].some((c) => !Number.isFinite(c))) {
+        return;
+      }
       // If the shape is biggest then two lines width sum, fill it inside with white color
       const bigEnough = (x2 - x1) > (weight * 2) && (y2 - y1) > (weight * 2);
       ctx.fillStyle = 'black';
@@ -50,10 +52,12 @@ class Drawer {
         );
       }
     };
-    const renderCircle = () => {
-      const coords = layout.getCoords();
-      const { x1, x2 } = coords;
-      const { y1, y2 } = coords;
+    const renderCircle = (coords) => {
+      if ([coords.x2, coords.y2].some((c) => !Number.isFinite(c))) {
+        return;
+      }
+      const { x1, y1 } = coords;
+      const { x2, y2 } = coords;
 
       const a = x2 - x1;
       const b = y2 - y1;
@@ -75,10 +79,12 @@ class Drawer {
         ctx.fill();
       }
     };
-    const renderLine = () => {
-      const coords = layout.getCoords();
-      const { x1, x2 } = coords;
-      const { y1, y2 } = coords;
+    const renderLine = (coords) => {
+      if ([coords.x2, coords.y2].some((c) => !Number.isFinite(c))) {
+        return;
+      }
+      const { x1, y1 } = coords;
+      const { x2, y2 } = coords;
 
       ctx.lineWidth = weight;
       ctx.beginPath();
@@ -86,19 +92,55 @@ class Drawer {
       ctx.lineTo(x2, y2);
       ctx.stroke();
     };
+    const renderBrush = (coords) => {
+      const { x1, y1 } = coords;
+      const { x2, y2 } = coords;
+
+      renderCircle({
+        x1,
+        y1,
+        x2: x1 + (weight / 2),
+        y2: y1,
+      });
+      if ([x2, y2].some((c) => !Number.isFinite(c))) {
+        return;
+      }
+      renderLine({
+        x1,
+        y1,
+        x2,
+        y2,
+      });
+      renderCircle({
+        x1: x2,
+        y1: y2,
+        x2: x2 + (weight / 2),
+        y2,
+      });
+    };
 
     switch (layout.tool) {
-      case 'rect':
-        renderRect();
+      case 'rect': {
+        const coords = layout.getConsistentCoords();
+        renderRect(coords);
         break;
-      case 'circle':
-        renderCircle();
+      }
+      case 'circle': {
+        const coords = layout.getCoords();
+        renderCircle(coords);
         break;
+      }
+      case 'brush': {
+        const coords = layout.getCoords();
+        renderBrush(coords);
+        break;
+      }
       default:
-      case 'brush':
-      case 'line':
-        renderLine();
+      case 'line': {
+        const coords = layout.getCoords();
+        renderLine(coords);
         break;
+      }
     }
   }
 }

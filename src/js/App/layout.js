@@ -5,9 +5,9 @@ class Layout {
   constructor(options = {}) {
     this.tool = options.tool || null;
     this.x1 = options.x1 || null;
-    this.x2 = options.x2 || this.x1;
+    this.x2 = options.x2 || null;
     this.y1 = options.y1 || null;
-    this.y2 = options.y2 || this.y1;
+    this.y2 = options.y2 || null;
   }
 
   /**
@@ -26,12 +26,26 @@ class Layout {
    * Returns coords assuming that x1 and y1 are coords of the top left cornor.
    */
   getConsistentCoords() {
-    return {
-      x1: Math.min.apply(null, [this.x1, this.x2]),
-      x2: Math.max.apply(null, [this.x1, this.x2]),
-      y1: Math.min.apply(null, [this.y1, this.y2]),
-      y2: Math.max.apply(null, [this.y1, this.y2]),
-    };
+    const { x1, x2 } = this;
+    const { y1, y2 } = this;
+    const result = {};
+
+    if (x2 === null || x1 === null) {
+      result.x1 = x1 === null ? x2 : x1;
+      result.x2 = x1 === null ? x1 : x2;
+    } else {
+      result.x1 = Math.min(x1, x2);
+      result.x2 = Math.max(x1, x2);
+    }
+
+    if (y1 === null || y2 === null) {
+      result.y1 = y1 === null ? y2 : y1;
+      result.y2 = y1 === null ? y1 : y2;
+    } else {
+      result.y1 = Math.min(y1, y2);
+      result.y2 = Math.max(y1, y2);
+    }
+    return result;
   }
 }
 
