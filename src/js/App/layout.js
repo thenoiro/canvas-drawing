@@ -3,6 +3,7 @@
  */
 class Layout {
   constructor(options = {}) {
+    this.step = options.step;
     this.tool = options.tool || null;
     this.x1 = options.x1 || null;
     this.x2 = options.x2 || null;
