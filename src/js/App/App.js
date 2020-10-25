@@ -1,3 +1,4 @@
+import Loop from './loop';
 import Layout from './layout';
 import Drawer from './drawer';
 import History from './history';
@@ -13,6 +14,9 @@ class DrawerApp {
   constructor(options = {}) {
     const { container } = options;
 
+    // If true, render will be started on requestAnimationFrame callback.
+    this.requestAnimationFrame = false;
+
     // We will set this property to true during drawing process (when the left mouse button will
     // be pressed).
     this.clicked = false;
@@ -26,6 +30,9 @@ class DrawerApp {
     this.container = container;
     this.paper = container.querySelector('.paper');
     this.canvas = container.querySelector('canvas');
+    this.control = {
+      requestAnimationFrame: container.querySelector('.request-animation-frame input'),
+    };
     this.buttons = {
       main: {
         clear: container.querySelector('.icon-button[data-tool="clear"]'),
@@ -50,6 +57,8 @@ class DrawerApp {
 
     // Storage, where we will keep our already finished layouts for each step.
     this.history = new History();
+
+    this.loop = new Loop(() => this.render());
   }
 
   /**
@@ -81,6 +90,11 @@ class DrawerApp {
     const toCanvasCoords = (x, y) => ({
       x: x - canvasCoords.x1,
       y: y - canvasCoords.y1,
+    });
+
+    // Listen for requestAnimationFrame option change
+    this.control.requestAnimationFrame.addEventListener('change', (e) => {
+      this.requestAnimationFrame = e.currentTarget.checked;
     });
 
     // Listen for each tool button click and change currently selected tool.
@@ -119,6 +133,12 @@ class DrawerApp {
         x1: c.x,
         y1: c.y,
       }));
+      if (this.requestAnimationFrame) {
+        // Render using requestAnimationFrame callback
+        this.loop.start();
+        return;
+      }
+      // Otherwise run render directly
       this.render();
     });
 
@@ -149,7 +169,10 @@ class DrawerApp {
             y1: c.y,
           }));
         }
-        this.render();
+        if (!this.requestAnimationFrame) {
+          // Render directly from event callback.
+          this.render();
+        }
       }
     });
 
@@ -163,8 +186,15 @@ class DrawerApp {
         this.history.addStep(this.layouts);
       }
       this.layouts = [];
-      this.render();
       this.refreshHistoryButtons();
+
+      // Last render call will be run from the loop instance after stopping.
+      if (this.requestAnimationFrame) {
+        this.loop.stop();
+        return;
+      }
+      // requestAnimationFrame is off. Run render directly.
+      this.render();
     });
 
     // Listen for document mousemove event to catch the moment when the cursor has left the canvas.
@@ -183,6 +213,13 @@ class DrawerApp {
           // Clear all step layouts, mark drawing process as finished, and redraw the canvas.
           this.clicked = false;
           this.layouts = [];
+
+          // Rerender will be run from loop instance.
+          if (this.requestAnimationFrame) {
+            this.loop.stop();
+            return;
+          }
+          // requestAnimationFrame is off. Run rerender directly.
           this.render();
         }
       }
