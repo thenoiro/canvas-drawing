@@ -15,14 +15,14 @@ class History {
    * @param {any} value
    */
   addStep(value) {
-    this.step += 1;
+    // Do not change step untill [getSteps] function run.
+    const step = this.step + 1;
+
     this.history = [
       ...this.getSteps(),
-      {
-        value,
-        step: this.step,
-      },
+      { value, step },
     ];
+    this.step = step;
   }
 
   /**
