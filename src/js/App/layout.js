@@ -3,7 +3,6 @@
  */
 class Layout {
   constructor(options = {}) {
-    this.step = options.step;
     this.tool = options.tool || null;
     this.x1 = options.x1 || null;
     this.x2 = options.x2 || null;
@@ -13,6 +12,7 @@ class Layout {
 
   /**
    * Returns original coords
+   * @returns {object}
    */
   getCoords() {
     return {
@@ -25,6 +25,7 @@ class Layout {
 
   /**
    * Returns coords assuming that x1 and y1 are coords of the top left cornor.
+   * @returns {object}
    */
   getConsistentCoords() {
     const { x1, x2 } = this;

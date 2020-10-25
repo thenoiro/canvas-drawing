@@ -1,5 +1,6 @@
 import Layout from './layout';
 import Drawer from './drawer';
+import History from './history';
 
 // TODO: Listen for window size changing
 
@@ -13,24 +14,14 @@ class DrawerApp {
     const { container } = options;
 
     // We will set this property to true during drawing process (when the left mouse button will
-    // be pressed)
+    // be pressed).
     this.clicked = false;
 
     // This is currently selected drawing tool. Could be one of: rect, circle, line, brush.
     this.tool = 'rect';
 
-    // Array of Layout instances wich wont be changed anymore
-    // (already drown layouts (mousedown -> mousemove -> mouseup).
+    // This is the place where we will store our current step layouts.
     this.layouts = [];
-
-    // This Layout instance could be changed by mouse move (mouse button still pressed).
-    // Could be presented only at [mousemove] step.
-    this.layout = null;
-
-    // Represents current drawing step. Each step is a full cycle of mousedown -> mousemove ->
-    // mouseup. Means that more then one layout could be drown in one step (for instance: brush
-    // tool draws a lot of small lines between mousedown and mouseup events).
-    this.step = 0;
 
     this.container = container;
     this.paper = container.querySelector('.paper');
@@ -56,10 +47,13 @@ class DrawerApp {
 
     // Create Drawer instance.
     this.drawer = new Drawer({ canvas: this.canvas });
+
+    // Storage, where we will keep our already finished layouts for each step.
+    this.history = new History();
   }
 
   /**
-   * Initialize instance
+   * Initialize the instance
    */
   init() {
     this.selectTool();
@@ -89,7 +83,7 @@ class DrawerApp {
       y: y - canvasCoords.y1,
     });
 
-    // Listen for each tool button click and change currently selected tool
+    // Listen for each tool button click and change currently selected tool.
     Object.values(this.buttons.tools).forEach((button) => {
       button.addEventListener('click', (e) => {
         const tool = e.currentTarget.getAttribute('data-tool');
@@ -103,10 +97,9 @@ class DrawerApp {
         const tool = e.currentTarget.getAttribute('data-tool');
 
         if (tool === 'clear') {
-          // Clear all the data and redraw the canvas
+          // Clear all the data and redraw the canvas.
           this.layouts = [];
-          this.layout = null;
-          this.step = 0;
+          this.history.clear();
           this.refreshHistoryButtons();
           this.render();
         }
@@ -115,22 +108,17 @@ class DrawerApp {
 
     // Canvas mousedown event
     this.canvas.addEventListener('mousedown', (e) => {
-      // User start drawing
-      this.clicked = true;
-      this.layouts = this.fromHistory();
-
-      // We increase history step on mousedown event because layout wich will be drown should be
-      // assigned to this step number (not finished at the moment).
-      this.step += 1;
       const c = toCanvasCoords(e.clientX, e.clientY);
 
+      // User starts drawing
+      this.clicked = true;
+
       // Create new layout instance for new shape (at this moment we have only starting coords).
-      this.layout = new Layout({
-        step: this.step,
+      this.layouts.push(new Layout({
         tool: this.tool,
         x1: c.x,
         y1: c.y,
-      });
+      }));
       this.render();
     });
 
@@ -138,31 +126,28 @@ class DrawerApp {
     this.canvas.addEventListener('mousemove', (e) => {
       // Run only in case of drawing process. Also do not run this condition in case of new shape's
       // layout is not presented (could be an error case).
-      if (this.clicked && this.layout) {
+      if (this.clicked && this.layouts.length) {
         const c = toCanvasCoords(e.clientX, e.clientY);
-        const previousLayout = this.layout;
+        const previousLayout = this.layouts.pop();
 
-        // Replace current shape's layout with new coords after move
-        this.layout = new Layout({
-          step: previousLayout.step,
+        // Replace last shape layout with new coords after move.
+        this.layouts.push(new Layout({
           tool: previousLayout.tool,
           x1: previousLayout.x1,
           y1: previousLayout.y1,
           x2: c.x,
           y2: c.y,
-        });
+        }));
 
         // We emulate brush tool with number of small lines. So, in the case of brush tool we
         // finish a small line, and repeat steps from the [mousedown] event to create new small
         // line layout
         if (this.tool === 'brush') {
-          this.layouts.push(this.layout);
-          this.layout = new Layout({
-            step: this.step,
+          this.layouts.push(new Layout({
             tool: this.tool,
             x1: c.x,
             y1: c.y,
-          });
+          }));
         }
         this.render();
       }
@@ -170,14 +155,14 @@ class DrawerApp {
 
     // Canvas mouseup event
     this.canvas.addEventListener('mouseup', () => {
-      // User finish drawing
+      // User finishes drawing
       this.clicked = false;
 
-      // Now this layout coudn't be modified. Move it to the layouts array and clear the property.
-      if (this.layout) {
-        this.layouts.push(this.layout);
+      // Current drawing step is finished, move all step layouts to the history.
+      if (this.layouts.length) {
+        this.history.addStep(this.layouts);
       }
-      this.layout = null;
+      this.layouts = [];
       this.render();
       this.refreshHistoryButtons();
     });
@@ -192,13 +177,13 @@ class DrawerApp {
         e.clientY > canvasCoords.y2,
       ];
       if (exceptions.some((ex) => ex)) {
-        const inProcess = Boolean(this.clicked && this.layout);
-        this.clicked = false;
-        this.layout = null;
+        const inProcess = Boolean(this.clicked && this.layouts.length);
 
         if (inProcess) {
-          // Correct mouseup event didn't happened. Return to the previous step.
-          this.historyUndo();
+          // Clear all step layouts, mark drawing process as finished, and redraw the canvas.
+          this.clicked = false;
+          this.layouts = [];
+          this.render();
         }
       }
     });
@@ -206,28 +191,29 @@ class DrawerApp {
     // History buttons
     Object.values(this.buttons.history).forEach((button) => {
       button.addEventListener('click', (/* e */) => {
-        const isDisabled = button.hasAttribute('disabled');
-
-        if (isDisabled) {
+        if (button.hasAttribute('disabled')) {
           return;
         }
         const direction = button.getAttribute('data-tool');
 
         if (direction === 'undo') {
-          this.historyUndo();
+          this.undo();
           return;
         }
-        this.historyRedo();
+        this.redo();
       });
     });
   }
 
   /**
-   * Returns all layouts between first and given step.
-   * @param {number} [step] - Upper limit.
+   * Returns all layouts from history.
+   * @returns {Layout[]}
    */
-  fromHistory(step = this.step) {
-    return this.layouts.filter((l) => l.step <= step);
+  getLayoutsFromHistory() {
+    return this.history.getSteps().reduce((layouts, { value }) => ([
+      ...layouts,
+      ...value,
+    ]), []);
   }
 
   /**
@@ -235,18 +221,17 @@ class DrawerApp {
    */
   refreshHistoryButtons() {
     const { undo, redo } = this.buttons.history;
+    const { step } = this.history;
+    const lastStep = this.history.lastStepIndex();
 
-    if (this.step < 1) {
+    if (step < 1) {
       undo.setAttribute('disabled', '');
-      this.step = 0;
     } else {
       undo.removeAttribute('disabled');
     }
 
-    if (this.layouts.length) {
-      const lastStep = this.layouts[this.layouts.length - 1].step;
-
-      if (this.step >= lastStep) {
+    if (lastStep) {
+      if (step >= lastStep) {
         redo.setAttribute('disabled', '');
       } else {
         redo.removeAttribute('disabled');
@@ -259,10 +244,8 @@ class DrawerApp {
   /**
    * Go to the previous step if possible.
    */
-  historyUndo() {
-    if (this.step > 0) {
-      this.step -= 1;
-    }
+  undo() {
+    this.history.prev();
     this.refreshHistoryButtons();
     this.render();
   }
@@ -270,14 +253,8 @@ class DrawerApp {
   /**
    * Go to the next step if possible.
    */
-  historyRedo() {
-    if (this.layouts.length) {
-      const lastStep = this.layouts[this.layouts.length - 1].step;
-
-      if (this.step < lastStep) {
-        this.step += 1;
-      }
-    }
+  redo() {
+    this.history.next();
     this.refreshHistoryButtons();
     this.render();
   }
@@ -300,43 +277,37 @@ class DrawerApp {
    * Readraw canvas in case of some changes.
    */
   render() {
-    // Get layouts considering current history state.
-    const layouts = this.fromHistory();
-    // Copy finished layouts
-    const newLayouts = [...layouts];
+    // Get all actual layouts from history with current step layouts.
+    const layouts = [
+      ...this.getLayoutsFromHistory(),
+      ...this.layouts,
+    ];
 
-    // Means, we in the drawing process. To paint not finished shape, we will also add it to the
-    // array of layouts.
-    if (this.layout) {
-      newLayouts.push(this.layout);
-    }
     // This is last time rendered layouts.
     const previousLayouts = this.drawer.layouts;
 
-    // Length of layouts has changed. This is possible in the case of brush tool, or after canvas
-    // refreshing.
-    if (newLayouts.length !== previousLayouts.length) {
-      this.drawer.update(newLayouts);
+    // Length of layouts has changed. Redraw the canvas.
+    if (layouts.length !== previousLayouts.length) {
+      this.drawer.update(layouts);
       return;
     }
-    // The same length, and there is no not finished shape... Not feels like something changed.
-    // This is possible during drawing process when mouse button has pressed, but no moves
-    // detected.
-    if (!this.layout) {
+    // If current step layouts array is empty, and layouts from the history are the same length as
+    // already drown layouts, consider there is no changes.
+    if (!this.layouts.length) {
       return;
     }
 
-    // Ok, we have the same amount of layouts, but this is possible during the drawing process.
-    // Maybe [this.layout] (not finished shape) has changed? Lets check and compare it with the
-    // last layout from [drawer] instance.
+    // Make sure that last rendered layout is the same coords as already drown last layout (could
+    // be changed at the [mousemove] step).
     const lastPreviousLayout = previousLayouts[previousLayouts.length - 1];
+    const lastCurrentLayout = this.layouts[this.layouts.length - 1];
     const lastCoords = Object.values(lastPreviousLayout.getConsistentCoords());
-    const thisCoords = Object.values(this.layout.getConsistentCoords());
+    const thisCoords = Object.values(lastCurrentLayout.getConsistentCoords());
     const changes = lastCoords.some((v, i) => v !== thisCoords[i]);
 
-    // We have the same amount of layouts, but different coords for last ones. Redraw.
+    // We have the same amount of layouts, but different coords for the last ones. Redraw.
     if (changes) {
-      this.drawer.update(newLayouts);
+      this.drawer.update(layouts);
     }
   }
 }
