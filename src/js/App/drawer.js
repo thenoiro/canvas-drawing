@@ -96,6 +96,9 @@ class Drawer {
       const { x1, y1 } = coords;
       const { x2, y2 } = coords;
 
+      // Each brush move is a combination of two circles located at start and end coords, and a
+      // line between them. We will draw small circle at the start coords even in case there is no
+      // finish coords yet (so it will look like bursh touch right after mousedown event).
       renderCircle({
         x1,
         y1,
