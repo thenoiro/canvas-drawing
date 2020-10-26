@@ -23,7 +23,7 @@ class Drawer {
    */
   update(layouts = []) {
     if (this.buffering) {
-      if (this.layouts.length < layouts.length && layouts.length > 1) {
+      if (this.layouts.length < layouts.length && this.layouts.length > 0) {
         const lastRenderedCached = this.layouts[this.layouts.length - 1];
         const lastGoingRendered = layouts[this.layouts.length - 1];
         const equals = lastRenderedCached.compare(lastGoingRendered);
