@@ -49,6 +49,22 @@ class Layout {
     }
     return result;
   }
+
+  /**
+   * Returns true if layouts are identical
+   * @param {Layout} layout
+   * @returns {boolean}
+   */
+  compare(layout) {
+    const conditions = [
+      layout.tool === this.tool,
+      layout.x1 === this.x1,
+      layout.x2 === this.x2,
+      layout.y1 === this.y1,
+      layout.y2 === this.y2,
+    ];
+    return conditions.every((c) => c);
+  }
 }
 
 export default Layout;

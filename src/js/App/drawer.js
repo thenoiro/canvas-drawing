@@ -9,6 +9,10 @@ class Drawer {
     this.width = canvas.offsetWidth;
     this.height = canvas.offsetHeight;
 
+    // If buffering is enabled, Drawer will render only new layouts (without clearing canvas and
+    // render all the data from the scratch).
+    this.buffering = false;
+
     // Last rendered layouts array
     this.layouts = [];
   }
@@ -18,6 +22,20 @@ class Drawer {
    * @param {object[]} layouts
    */
   update(layouts = []) {
+    if (this.buffering) {
+      if (this.layouts.length < layouts.length && layouts.length > 1) {
+        const lastRenderedCached = this.layouts[this.layouts.length - 1];
+        const lastGoingRendered = layouts[this.layouts.length - 1];
+        const equals = lastRenderedCached.compare(lastGoingRendered);
+
+        if (equals) {
+          const newLayouts = layouts.slice(this.layouts.length, layouts.length);
+          newLayouts.forEach((l) => this.renderLayout(l));
+          this.layouts = layouts;
+          return;
+        }
+      }
+    }
     this.layouts = layouts;
     // Clear canvas before update
     this.ctx.clearRect(0, 0, this.width, this.height);

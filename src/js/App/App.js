@@ -4,6 +4,8 @@ import Drawer from './drawer';
 import History from './history';
 
 // TODO: Listen for window size changing
+// TODO: Add ability to change line weight
+// TODO: Add ability to change the color
 
 /**
  * Drawer controller
@@ -32,6 +34,7 @@ class DrawerApp {
     this.canvas = container.querySelector('canvas');
     this.control = {
       requestAnimationFrame: container.querySelector('.request-animation-frame input'),
+      buffering: container.querySelector('.buffering input'),
     };
     this.buttons = {
       main: {
@@ -95,6 +98,10 @@ class DrawerApp {
     // Listen for requestAnimationFrame option change
     this.control.requestAnimationFrame.addEventListener('change', (e) => {
       this.requestAnimationFrame = e.currentTarget.checked;
+    });
+
+    this.control.buffering.addEventListener('change', (e) => {
+      this.drawer.buffering = e.currentTarget.checked;
     });
 
     // Listen for each tool button click and change currently selected tool.
@@ -338,9 +345,7 @@ class DrawerApp {
     // be changed at the [mousemove] step).
     const lastPreviousLayout = previousLayouts[previousLayouts.length - 1];
     const lastCurrentLayout = this.layouts[this.layouts.length - 1];
-    const lastCoords = Object.values(lastPreviousLayout.getConsistentCoords());
-    const thisCoords = Object.values(lastCurrentLayout.getConsistentCoords());
-    const changes = lastCoords.some((v, i) => v !== thisCoords[i]);
+    const changes = !lastCurrentLayout.compare(lastPreviousLayout);
 
     // We have the same amount of layouts, but different coords for the last ones. Redraw.
     if (changes) {
